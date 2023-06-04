@@ -54,6 +54,52 @@ double* getU(
     return U;
 }
 
+double* getF(double* U)
+{
+    double* F = malloc(U_SIZE * sizeof(double));
+
+    double* Bx = U + (0 * nNodos);
+    double* By = U + (1 * nNodos);
+    double* Bz = U + (2 * nNodos);
+    double* rho = U + (3 * nNodos);
+    double* Vx = U + (4 * nNodos);
+    double* Vy = U + (5 * nNodos);
+    double* Vz = U + (6 * nNodos);
+    double* E = U + (7 * nNodos);
+
+    double* B = malloc(nNodos * sizeof(double));
+    double* V = malloc(nNodos * sizeof(double));
+    double* p = malloc(nNodos * sizeof(double));
+
+    for (size_t i = 0; i < nNodos; i++){
+        Vx[i] = Vx[i] / rho[i];
+        Vy[i] = Vy[i] / rho[i];
+        Vz[i] = Vz[i] / rho[i];
+    }
+
+    for (size_t i = 0; i < nNodos; i++)
+    {
+        // gamma = 2.0;
+
+        B[i] = sqrt(pow2(Bx[i]) + pow2(By[i]) + pow2(Bz[i]));
+        V[i] = sqrt(pow2(Vx[i]) + pow2(Vy[i]) + pow2(Vz[i]));
+        p[i] = (E[i] - 0.5 * rho[i] *  pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
+
+        F[0 * nNodos + i] = 0;
+        F[1 * nNodos + i] = By[i] * Vx[i] - Bx[i] * Vy[i];
+        F[2 * nNodos + i] = Bz[i] * Vx[i] - Bx[i] * Vz[i];
+        F[3 * nNodos + i] = rho[i] * Vx[i];
+        F[4 * nNodos + i] = rho[i] * Vx[i] * Vx[i] + (p[i] + (pow2(B[i])) / 2) - pow2(Bx[i]);
+        F[5 * nNodos + i] = rho[i] * Vx[i] * Vy[i] - Bx[i] * By[i];
+        F[6 * nNodos + i] = rho[i] * Vx[i] * Vz[i] - Bx[i] * Bz[i];
+        double F8a = ((0.5 * rho[i] * pow2(V[i]) + (gamma * p[i] / (gamma - 1)) + pow2(B[i])) * Vx[i]);
+        double F8b = (Bx[i] * (Bx[i] * Vx[i] + By[i] * Vy[i] + Bz[i] * Vz[i]));
+        F[7 * nNodos + i] = F8a - F8b;
+    }
+
+    return F;
+}
+
 void calculateAllValues(
     int length,
     double* x,     
@@ -126,9 +172,12 @@ int main() {
 
     double* U = getU(Bx, By, Bz, rho, p, Vx, Vy, Vz);
 
+    double* F = getF(U);
+
     for (size_t i = 0; i < U_SIZE; i++)
     {
-        printf("U[%ld] = %f\n", i, U[i]);
+        // printf("U[%ld] = %f\n", i, U[i]);
+        printf("F[%ld] = %f\n", i, F[i]);
     }
     
 
@@ -153,6 +202,7 @@ int main() {
     free(Bx);
     free(By);
     free(Bz);
+    free(U);
 
     return 0;
 }
