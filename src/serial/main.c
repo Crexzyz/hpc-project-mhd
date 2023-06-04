@@ -75,6 +75,48 @@ void calculateValues(double* x, int length, double* result, Parameter_t param) {
     }
 }
 
+void calculateAllValues(double* x,     
+    double* rho_p,
+    double* Vx_p,
+    double* Vy_p,
+    double* Vz_p,
+    double* p_p,
+    double* Bx_p,
+    double* By_p,
+    double* Bz_p ) {
+
+    double rho1 = 1.0;
+    double Vx1 = 0.0;
+    double Vy1 = 0.0;
+    double Vz1 = 0.0;
+    double p1 = 1.0;
+    double Bx1 = 0.75;
+    double By1 = 1.0;
+    double Bz1 = 0.0;
+
+    double rho2 = 0.125;
+    double Vx2 = 0.0;
+    double Vy2 = 0.0;
+    double Vz2 = 0.0;
+    double p2 = 0.1;
+    double Bx2 = 0.75;
+    double By2 = -1.0;
+    double Bz2 = 0.0;
+
+    //paralell
+    for (int i = 0; i < length; i++) {
+        double tanhVal = tanh(x[i] / W);
+            rho_p[i] = (rho2 + rho1) / 2 + ((rho2 - rho1) / 2) * tanhVal;
+            Vx_p[i] = (Vx2 + Vx1) / 2 + ((Vx2 - Vx1) / 2) * tanhVal;
+            Vy_p[i] = (Vy2 + Vy1) / 2 + ((Vy2 - Vy1) / 2) * tanhVal;
+            Vz_p[i] = (Vz2 + Vz1) / 2 + ((Vz2 - Vz1) / 2) * tanhVal;
+            p_p[i] = (p2 + p1) / 2 + ((p2 - p1) / 2) * tanhVal;
+            Bx_p[i] = (Bx2 + Bx1) / 2 + ((Bx2 - Bx1) / 2) * tanhVal;
+            By_p[i] = (By2 + By1) / 2 + ((By2 - By1) / 2) * tanhVal;
+            Bz_p[i] = (Bz2 + Bz1) / 2 + ((Bz2 - Bz1) / 2) * tanhVal;
+    }
+}
+
 int main() {
     double* x = linspace(-1.0, 1.0, nNodos);
     double dx = fabs(x[1] - x[0]);
@@ -88,14 +130,24 @@ int main() {
     double* By = malloc(nNodos * sizeof(double));
     double* Bz = malloc(nNodos * sizeof(double));
 
-    calculateValues(x, nNodos, rho, RHO);
+    /*calculateValues(x, nNodos, rho, RHO);
     calculateValues(x, nNodos, Vx, VX);
     calculateValues(x, nNodos, Vy, VY);
     calculateValues(x, nNodos, Vz, VZ);
     calculateValues(x, nNodos, p, P);
     calculateValues(x, nNodos, Bx, BX);
     calculateValues(x, nNodos, By, BY);
-    calculateValues(x, nNodos, Bz, BZ);
+    calculateValues(x, nNodos, Bz, BZ);*/
+
+    calculateAllValues(x,     
+      rho_p,
+      Vx_p,
+      Vy_p,
+      Vz_p,
+      p_p,
+      Bx_p,
+      By_p,
+      Bz_p );
 
     // Print the results
     for (int i = 0; i < nNodos; i++) {
