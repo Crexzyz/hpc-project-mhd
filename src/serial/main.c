@@ -7,6 +7,7 @@
 #define gamma 2.0
 #define dt 0.0005
 #define tMax 0.20
+#define U_SIZE 8 * nNodos
 
 double* linspace(double start, double end, int num) {
     double step = (end - start) / (num - 1);
@@ -15,6 +16,42 @@ double* linspace(double start, double end, int num) {
         array[i] = start + i * step;
     }
     return array;
+}
+
+double pow2(double a) {
+    return a * a;
+}
+
+double* getU(
+    double* Bx, double* By, double* Bz, double* rho, double* p,
+    double* Vx, double* Vy, double* Vz)
+{
+    double Mx, My, Mz, V, B, E;
+
+    double* U = malloc(U_SIZE * sizeof(double));
+
+    //parallel
+    for (size_t i = 0; i < nNodos; i++)
+    {
+        Mx = rho[i] * Vx[i];
+        My = rho[i] * Vy[i];
+        Mz = rho[i] * Vz[i];
+
+        V = sqrt(pow2(Vx[i]) + pow2(Vy[i]) + pow2(Vz[i]));
+        B = sqrt(pow2(Bx[i]) + pow2(By[i]) + pow2(Bz[i]));
+        E = p[i] / (gamma - 1) + 0.5 * rho[i] * (pow2(V)) + (pow2(B)) / 2;
+
+        U[0 * nNodos + i] = Bx[i];
+        U[1 * nNodos + i] = By[i];
+        U[2 * nNodos + i] = Bz[i];
+        U[3 * nNodos + i] = rho[i];
+        U[4 * nNodos + i] = Mx;
+        U[5 * nNodos + i] = My;
+        U[6 * nNodos + i] = Mz;
+        U[7 * nNodos + i] = E;
+    }
+
+    return U;
 }
 
 void calculateAllValues(
@@ -87,17 +124,25 @@ int main() {
         Bz
     );
 
+    double* U = getU(Bx, By, Bz, rho, p, Vx, Vy, Vz);
+
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        printf("U[%ld] = %f\n", i, U[i]);
+    }
+    
+
     // Print the results
-    for (int i = 0; i < nNodos; i++) {
+    // for (int i = 0; i < nNodos; i++) {
         // printf("rho[%d] = %f\n", i, rho[i]);
         // printf("Vx[%d] = %f\n", i, Vx[i]);
         // printf("Vy[%d] = %f\n", i, Vy[i]);
         // printf("Vz[%d] = %f\n", i, Vz[i]);
-        printf("p[%d] = %f\n", i, p[i]);
+        // printf("p[%d] = %f\n", i, p[i]);
         // printf("Bx[%d] = %f\n", i, Bx[i]);
         // printf("By[%d] = %f\n", i, By[i]);
         // printf("Bz[%d] = %f\n", i, Bz[i]);
-    }
+    // }
 
     free(x);
     free(rho);
