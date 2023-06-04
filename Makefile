@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -c
-LDFLAGS =
+CFLAGS = -g -c
+LDFLAGS = -lm
 VERSIONS = serial
 
 SRC_FOLDER = src
@@ -15,7 +15,7 @@ OBJS = $(patsubst $(SRC_FOLDER)/%.c, $(BUILD_FOLDER)/%.o, $(SRCS))
 all: $(EXECUTABLES)
 
 $(EXECUTABLES): $(OBJS)
-	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 $(OBJS): $(BUILD_FOLDER)/%.o: $(SRC_FOLDER)/%.c
 	@mkdir -p $(@D)
@@ -23,6 +23,3 @@ $(OBJS): $(BUILD_FOLDER)/%.o: $(SRC_FOLDER)/%.c
 
 clean:
 	rm -rf build
-
-run$(VERSIONS): $(VERSIONS)
-	@./build/$^.out
