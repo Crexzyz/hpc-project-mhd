@@ -77,6 +77,7 @@ double* getF(double* U)
         Vz[i] = Vz[i] / rho[i];
     }
 
+    //parallel
     for (size_t i = 0; i < nNodos; i++)
     {
         // gamma = 2.0;
@@ -97,7 +98,53 @@ double* getF(double* U)
         F[7 * nNodos + i] = F8a - F8b;
     }
 
+    free(p);
+    free(V);
+    free(B);
     return F;
+}
+
+double* getD(double* U)
+{
+    double* D = malloc(U_SIZE * sizeof(double));
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        D[i] = 0;
+    }
+
+    double* Bx = U + (0 * nNodos);
+    double* By = U + (1 * nNodos);
+    double* Bz = U + (2 * nNodos);
+    double* rho = U + (3 * nNodos);
+    double* Vx = U + (4 * nNodos);
+    double* Vy = U + (5 * nNodos);
+    double* Vz = U + (6 * nNodos);
+    double* E = U + (7 * nNodos);
+
+    double* B = malloc(nNodos * sizeof(double));
+    double* V = malloc(nNodos * sizeof(double));
+    double* p = malloc(nNodos * sizeof(double));
+
+    for (size_t i = 0; i < nNodos; i++){
+        Vx[i] = Vx[i] / rho[i];
+        Vy[i] = Vy[i] / rho[i];
+        Vz[i] = Vz[i] / rho[i];
+    }
+
+    for (size_t i = 0; i < nNodos; i++)
+    {
+        B[i] = sqrt(pow2(Bx[i]) + pow2(By[i]) + pow2(Bz[i]));
+        V[i] = sqrt(pow2(Vx[i]) + pow2(Vy[i]) + pow2(Vz[i]));
+        p[i] = (E[i] - 0.5 * rho[i] *  pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
+        
+        D[4 * nNodos + i] = Vx[i];
+        D[7 * nNodos + i] = p[i] / rho[i];
+    }
+
+    free(p);
+    free(V);
+    free(B);
+    return D;
 }
 
 void calculateAllValues(
@@ -173,11 +220,13 @@ int main() {
     double* U = getU(Bx, By, Bz, rho, p, Vx, Vy, Vz);
 
     double* F = getF(U);
+    double* D = getD(U);
 
     for (size_t i = 0; i < U_SIZE; i++)
     {
         // printf("U[%ld] = %f\n", i, U[i]);
-        printf("F[%ld] = %f\n", i, F[i]);
+        // printf("F[%ld] = %f\n", i, F[i]);
+        printf("D[%ld] = %f\n", i, D[i]);
     }
     
 
@@ -203,6 +252,8 @@ int main() {
     free(By);
     free(Bz);
     free(U);
+    free(F);
+    free(D);
 
     return 0;
 }
