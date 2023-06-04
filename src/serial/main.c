@@ -8,11 +8,6 @@
 #define dt 0.0005
 #define tMax 0.20
 
-typedef enum Parameter {
-    RHO, VX, VY, VZ,
-    P, BX, BY, BZ
-} Parameter_t;
-
 double* linspace(double start, double end, int num) {
     double step = (end - start) / (num - 1);
     double* array = malloc(num * sizeof(double));
@@ -22,60 +17,9 @@ double* linspace(double start, double end, int num) {
     return array;
 }
 
-void calculateValues(double* x, int length, double* result, Parameter_t param) {
-    double rho1 = 1.0;
-    double Vx1 = 0.0;
-    double Vy1 = 0.0;
-    double Vz1 = 0.0;
-    double p1 = 1.0;
-    double Bx1 = 0.75;
-    double By1 = 1.0;
-    double Bz1 = 0.0;
-
-    double rho2 = 0.125;
-    double Vx2 = 0.0;
-    double Vy2 = 0.0;
-    double Vz2 = 0.0;
-    double p2 = 0.1;
-    double Bx2 = 0.75;
-    double By2 = -1.0;
-    double Bz2 = 0.0;
-
-    for (int i = 0; i < length; i++) {
-        double tanhVal = tanh(x[i] / W);
-        switch (param)
-        {
-        case RHO:
-            result[i] = (rho2 + rho1) / 2 + ((rho2 - rho1) / 2) * tanhVal;
-            break;
-        case VX:
-            result[i] = (Vx2 + Vx1) / 2 + ((Vx2 - Vx1) / 2) * tanhVal;
-            break;
-        case VY:
-            result[i] = (Vy2 + Vy1) / 2 + ((Vy2 - Vy1) / 2) * tanhVal;
-            break;
-        case VZ:
-            result[i] = (Vz2 + Vz1) / 2 + ((Vz2 - Vz1) / 2) * tanhVal;
-            break;
-        case P:
-            result[i] = (p2 + p1) / 2 + ((p2 - p1) / 2) * tanhVal;
-            break;
-        case BX:
-            result[i] = (Bx2 + Bx1) / 2 + ((Bx2 - Bx1) / 2) * tanhVal;
-            break;
-        case BY:
-            result[i] = (By2 + By1) / 2 + ((By2 - By1) / 2) * tanhVal;
-            break;
-        case BZ:
-            result[i] = (Bz2 + Bz1) / 2 + ((Bz2 - Bz1) / 2) * tanhVal;
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-void calculateAllValues(double* x,     
+void calculateAllValues(
+    int length,
+    double* x,     
     double* rho_p,
     double* Vx_p,
     double* Vy_p,
@@ -130,24 +74,18 @@ int main() {
     double* By = malloc(nNodos * sizeof(double));
     double* Bz = malloc(nNodos * sizeof(double));
 
-    /*calculateValues(x, nNodos, rho, RHO);
-    calculateValues(x, nNodos, Vx, VX);
-    calculateValues(x, nNodos, Vy, VY);
-    calculateValues(x, nNodos, Vz, VZ);
-    calculateValues(x, nNodos, p, P);
-    calculateValues(x, nNodos, Bx, BX);
-    calculateValues(x, nNodos, By, BY);
-    calculateValues(x, nNodos, Bz, BZ);*/
-
-    calculateAllValues(x,     
-      rho_p,
-      Vx_p,
-      Vy_p,
-      Vz_p,
-      p_p,
-      Bx_p,
-      By_p,
-      Bz_p );
+    calculateAllValues(
+        nNodos,
+        x,     
+        rho,
+        Vx,
+        Vy,
+        Vz,
+        p,
+        Bx,
+        By,
+        Bz
+    );
 
     // Print the results
     for (int i = 0; i < nNodos; i++) {
