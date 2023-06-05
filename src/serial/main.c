@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <float.h>
+#include <unistd.h>
 
 #define nNodos 1000
 #define W 0.0085
@@ -319,6 +321,14 @@ double* getNU(double* U, double* x){
         NU[i] = U[i] + dt * (1.0/6*LU[i] + 1.0/3*LU1[i] + 1.0/3*LU2[i] + 1.0/6*LU3[i]);
     }
 
+    free(U3fake);
+    free(LU3);
+    free(U2fake);
+    free(LU2);
+    free(U1fake);
+    free(LU1);
+    free(LU);
+
     return NU;
 }
 
@@ -366,6 +376,13 @@ void calculateAllValues(
     }
 }
 
+void print_matrix(double* src) {
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        printf("[%ld] = %f\n", i, src[i]);
+    }
+}
+
 int main() {
     double* x = linspace(-1.0, 1.0, nNodos);
 
@@ -398,23 +415,96 @@ int main() {
     double* U2 = getNU(U1, x);
     double* U3 = getNU(U2, x);
 
-    for (size_t i = 0; i < U_SIZE; i++)
-    {
-        printf("U3[%ld] = %f\n", i, U3[i]);
-    }
-    
+    double* UNMenos3 = U;
+    double* UNMenos2 = U1;
+    double* UNMenos1 = U2;
+    double* Un = U3;
 
-    // Print the results
-    // for (int i = 0; i < nNodos; i++) {
-        // printf("rho[%d] = %f\n", i, rho[i]);
-        // printf("Vx[%d] = %f\n", i, Vx[i]);
-        // printf("Vy[%d] = %f\n", i, Vy[i]);
-        // printf("Vz[%d] = %f\n", i, Vz[i]);
-        // printf("p[%d] = %f\n", i, p[i]);
-        // printf("Bx[%d] = %f\n", i, Bx[i]);
-        // printf("By[%d] = %f\n", i, By[i]);
-        // printf("Bz[%d] = %f\n", i, Bz[i]);
-    // }
+    for (size_t i = 3400; i < 3600; i++)
+    {
+        printf("Un[%ld] = %f\n", i, Un[i]);
+    }
+
+    double* LUnMenos3 = getLU(UNMenos3, x);
+    double* LUnMenos2 = getLU(UNMenos2, x);
+    double* LUnMenos1 = getLU(UNMenos1, x);
+    
+    double tiempo = 3*dt;
+
+    int m = 3;
+    while(tMax > tiempo) {
+        tiempo = tiempo + dt;
+        double * LUn =  getLU(Un, x);
+
+        double* UIM = malloc(U_SIZE * sizeof(double));
+        for (size_t i = 0; i < U_SIZE; i++)
+        {
+            UIM[i] = Un[i] + dt*(55.0/24*LUn[i] - 59.0/24*LUnMenos1[i] + 37.0/24*LUnMenos2[i] -9.0/24*LUnMenos3[i]);
+        }
+        double* LUIM = getLU(UIM, x);
+        
+        double* UNmasUno = malloc(U_SIZE * sizeof(double));
+        for (size_t i = 0; i < U_SIZE; i++)
+        {
+            UNmasUno[i] = Un[i] + dt*(9.0/24*LUIM[i] + 19.0/24*LUn[i] - 5.0/24*LUnMenos1[i] + 1.0/24*LUnMenos2[i]);
+        }
+
+        // double tol = 1e-15;
+        double error = 1.0;
+        int n = 1;
+
+        while (error > 20*FLT_EPSILON)
+        {
+            double* LUNmasUno =  getLU(UNmasUno, x);
+            double* UNmasUnoP = malloc(U_SIZE * sizeof(double));
+            for (size_t i = 0; i < U_SIZE; i++)
+            {
+                UNmasUnoP[i] = Un[i] + dt*(9.0/24*LUNmasUno[i] + 19.0/24*LUn[i] - 5.0/24*LUnMenos1[i] + 1.0/24*LUnMenos2[i]);
+            }
+
+            
+            double max = 0.0;
+            for (size_t i = 0; i < U_SIZE; i++) {
+                double resta = UNmasUno[i] - UNmasUnoP[i];
+                double local_error = fabs(resta);
+                if(local_error > max) {
+                    max = local_error;
+                }
+            }
+
+            error = max;
+
+            for (size_t i = 0; i < U_SIZE; i++) {
+                UNmasUno[i] = UNmasUnoP[i];
+            }
+
+            n = n + 1;
+
+            free(LUNmasUno);
+            free(UNmasUnoP);
+        }
+
+        for (size_t i = 0; i < U_SIZE; i++) {
+            UNMenos3[i] = UNMenos2[i];
+            UNMenos2[i] = UNMenos1[i];
+            UNMenos1[i] = Un[i];
+            Un[i] = UNmasUno[i];
+        }
+
+        LUnMenos3 = getLU(UNMenos3,x);
+        LUnMenos2 = getLU(UNMenos2,x);
+        LUnMenos1 = getLU(UNMenos1,x);
+        
+        // plot(x,Un(4,:),'-b.')
+        // pause(0.01)
+        sleep(0.01);
+        m = m+1;
+
+        free(UNmasUno);
+        free(LUIM);
+        free(UIM);
+        free(LUn);
+    }
 
     free(x);
     free(rho);
@@ -429,6 +519,14 @@ int main() {
     free(U1);
     free(U2);
     free(U3);
+
+    free(UNMenos3);
+    free(UNMenos2);
+    free(UNMenos1);
+    free(Un);
+    free(LUnMenos3);
+    free(LUnMenos2);
+    free(LUnMenos1);
 
     return 0;
 }
