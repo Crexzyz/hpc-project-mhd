@@ -288,7 +288,40 @@ double* getLU(double* U, double *x) {
 
     return LU;
 }
- 
+
+double* getNU(double* U, double* x){
+    double* LU = getLU(U, x);
+    
+    double* U1fake = malloc(U_SIZE * sizeof(double));
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        U1fake[i] = U[i] + dt/2*LU[i];
+    }
+    double* LU1 = getLU(U1fake, x);
+
+    double* U2fake = malloc(U_SIZE * sizeof(double));
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        U2fake[i] = U[i] + dt/2 * LU1[i];
+    }
+    double* LU2 = getLU(U2fake, x);  
+
+    double* U3fake = malloc(U_SIZE * sizeof(double));
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        U3fake[i] = U[i] + dt/2 * LU2[i];
+    }
+    double* LU3 = getLU(U3fake, x);  
+
+    double* NU = malloc(U_SIZE * sizeof(double));
+    for (size_t i = 0; i < U_SIZE; i++)
+    {
+        NU[i] = U[i] + dt * (1.0/6*LU[i] + 1.0/3*LU1[i] + 1.0/3*LU2[i] + 1.0/6*LU3[i]);
+    }
+
+    return NU;
+}
+
 void calculateAllValues(
     int length,
     double* x,     
@@ -359,14 +392,15 @@ int main() {
     );
 
     double* U = getU(Bx, By, Bz, rho, p, Vx, Vy, Vz);
-    double* LU = getLU(U, x);
+
+    //get first 3U 
+    double* U1 = getNU(U, x);
+    double* U2 = getNU(U1, x);
+    double* U3 = getNU(U2, x);
 
     for (size_t i = 0; i < U_SIZE; i++)
     {
-        // printf("U[%ld] = %f\n", i, U[i]);
-        // printf("F[%ld] = %f\n", i, F[i]);
-        // printf("D[%ld] = %f\n", i, D[i]);
-        
+        printf("U3[%ld] = %f\n", i, U3[i]);
     }
     
 
@@ -392,7 +426,9 @@ int main() {
     free(By);
     free(Bz);
     free(U);
-    free(LU);
+    free(U1);
+    free(U2);
+    free(U3);
 
     return 0;
 }
