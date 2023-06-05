@@ -248,6 +248,14 @@ double* getLU(double* U, double *x) {
         for(size_t row = 0; row < 8; ++row) {
             dummy2[row * nNodos + i] = arreglo[row];
         }
+
+        free(b1_val);
+        free(b2_val);
+        free(b3_val);
+        free(b4_val);
+        free(b5_val);
+        free(b6_val);
+        free(b7_val);
     }
 
     // Apply additional calculations to dummy2 array
