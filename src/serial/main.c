@@ -86,16 +86,16 @@ double* getF(double* U)
 
         B[i] = sqrt(pow2(Bx[i]) + pow2(By[i]) + pow2(Bz[i]));
         V[i] = sqrt(pow2(Vx[i]) + pow2(Vy[i]) + pow2(Vz[i]));
-        p[i] = (E[i] - 0.5 * rho[i] *  pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
+        p[i] = (E[i] - 1.0/2 * rho[i] *  pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
 
         F[0 * nNodos + i] = 0;
         F[1 * nNodos + i] = By[i] * Vx[i] - Bx[i] * Vy[i];
         F[2 * nNodos + i] = Bz[i] * Vx[i] - Bx[i] * Vz[i];
         F[3 * nNodos + i] = rho[i] * Vx[i];
-        F[4 * nNodos + i] = rho[i] * Vx[i] * Vx[i] + (p[i] + (pow2(B[i])) / 2) - pow2(Bx[i]);
+        F[4 * nNodos + i] = rho[i] * pow2(Vx[i]) + (p[i] + (pow2(B[i]) / 2)) - pow2(Bx[i]);
         F[5 * nNodos + i] = rho[i] * Vx[i] * Vy[i] - Bx[i] * By[i];
         F[6 * nNodos + i] = rho[i] * Vx[i] * Vz[i] - Bx[i] * Bz[i];
-        double F8a = ((0.5 * rho[i] * pow2(V[i]) + (gamma * p[i] / (gamma - 1)) + pow2(B[i])) * Vx[i]);
+        double F8a = ((1.0/2 * rho[i] * pow2(V[i]) + (gamma * p[i] / (gamma - 1)) + pow2(B[i])) * Vx[i]);
         double F8b = (Bx[i] * (Bx[i] * Vx[i] + By[i] * Vy[i] + Bz[i] * Vz[i]));
         F[7 * nNodos + i] = F8a - F8b;
     }
@@ -137,7 +137,7 @@ double* getD(double* U)
     {
         B[i] = sqrt(pow2(Bx[i]) + pow2(By[i]) + pow2(Bz[i]));
         V[i] = sqrt(pow2(Vx[i]) + pow2(Vy[i]) + pow2(Vz[i]));
-        p[i] = (E[i] - 0.5 * rho[i] *  pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
+        p[i] = (E[i] - 1.0/2 * rho[i] * pow2(V[i]) - pow2(B[i]) / 2) * (gamma - 1);
         
         D[4 * nNodos + i] = Vx[i];
         D[7 * nNodos + i] = p[i] / rho[i];
@@ -151,10 +151,8 @@ double* getD(double* U)
 
 void add_column(double* src_col, double* dst_mtx, size_t dst_col) {
     for(size_t row = 0; row < 8; ++row) {
-        // printf("dst (%f) += %f\n", dst_mtx[row * nNodos + dst_col], src_col[row]);
         dst_mtx[row * nNodos + dst_col] += src_col[row];
     }
-    // printf("End\n\n");
 }
 
 double* multiply_column(double value, size_t col, double *mtx) {
@@ -267,7 +265,6 @@ double* getLU(double* U, double *x) {
         dummy2[nNodos * 7 + i] = etaT * rho[i] * dummy2[nNodos * 7 + i];
     }
 
-
     double* LU = malloc(U_SIZE * sizeof(double));
     for (size_t i = 0; i < U_SIZE; i++)
     {
@@ -279,7 +276,6 @@ double* getLU(double* U, double *x) {
     for (size_t i = 0; i < U_SIZE; i++)
     {
         LU[i] = (dummy1[i] / dx) + (dummy2[i] / pow2(dx));
-        // printf("LU[%ld] = %.10e\n", i, LU[i]);
     }
 
     // Free allocated memory
@@ -297,7 +293,7 @@ double* getNU(double* U, double* x){
     double* U1fake = malloc(U_SIZE * sizeof(double));
     for (size_t i = 0; i < U_SIZE; i++)
     {
-        U1fake[i] = U[i] + dt/2*LU[i];
+        U1fake[i] = U[i] + dt/2 * LU[i];
     }
     double* LU1 = getLU(U1fake, x);
 
@@ -311,15 +307,27 @@ double* getNU(double* U, double* x){
     double* U3fake = malloc(U_SIZE * sizeof(double));
     for (size_t i = 0; i < U_SIZE; i++)
     {
-        U3fake[i] = U[i] + dt/2 * LU2[i];
+        U3fake[i] = U[i] + dt * LU2[i];
     }
-    double* LU3 = getLU(U3fake, x);  
+    double* LU3 = getLU(U3fake, x);
 
     double* NU = malloc(U_SIZE * sizeof(double));
     for (size_t i = 0; i < U_SIZE; i++)
     {
         NU[i] = U[i] + dt * (1.0/6*LU[i] + 1.0/3*LU1[i] + 1.0/3*LU2[i] + 1.0/6*LU3[i]);
     }
+
+    // int fila = 1000 * 3;
+    // for (size_t i = fila + 399; i < fila + 600; i++)
+    // {
+    //     printf("NU (%.4f) = ", NU[i]);
+    //     printf("%.4f + ", U[i]);
+    //     printf("%.4f*", dt);
+    //     printf("(%.4f*%.4f +", 1.0/6, LU[i]);
+    //     printf("%.4f*%.4f + ", 1.0/3, LU1[i]);
+    //     printf("%.4f*%.4f + ", 1.0/3, LU2[i]);
+    //     printf("%.4f*%.4f)\n", 1.0/6, LU3[i]);
+    // }
 
     free(U3fake);
     free(LU3);
@@ -419,11 +427,6 @@ int main() {
     double* UNMenos2 = U1;
     double* UNMenos1 = U2;
     double* Un = U3;
-
-    for (size_t i = 3400; i < 3600; i++)
-    {
-        printf("Un[%ld] = %f\n", i, Un[i]);
-    }
 
     double* LUnMenos3 = getLU(UNMenos3, x);
     double* LUnMenos2 = getLU(UNMenos2, x);
