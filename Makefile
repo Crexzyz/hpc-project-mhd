@@ -21,5 +21,8 @@ $(OBJS): $(BUILD_FOLDER)/%.o: $(SRC_FOLDER)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $< -o $@
 
+profileserial: $(EXECUTABLES)
+	@valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes ./build/serial.out
+
 clean:
 	rm -rf build

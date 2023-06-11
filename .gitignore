@@ -41,6 +41,7 @@
 *.su
 *.idb
 *.pdb
+callgrind.out.*
 
 # Kernel Module Compile Results
 *.mod*
