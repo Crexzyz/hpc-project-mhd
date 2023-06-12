@@ -4,8 +4,10 @@
 #include <float.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
+#include "timer.h"
 
-#define NODES 30
+#define NODES 1000
 #define ROWS 8
 #define W 0.0085
 #define GAMMA 2.0
@@ -20,6 +22,18 @@ void print_matrix(double* flat_matrix) {
         }
         printf("\n");
     }
+}
+
+bool is_matrix_nan(double* flat_matrix) {
+    for(size_t row = 0; row < 8; ++row) {
+        for(size_t col = 0; col < NODES; ++col) {
+            if(isnan(flat_matrix[row * NODES + col])) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 double* linspace(double start, double end, int num) {
@@ -303,6 +317,9 @@ double* getNU(double* U, double* x){
 }
 
 int main() {
+    // struct timespec tstart;
+    // cpu_timer_start(&tstart);
+
     double* x = linspace(-1.0, 1.0, NODES);
 
     double* rho = malloc(NODES * sizeof(double));
@@ -331,20 +348,23 @@ int main() {
     double* LUnMenos1 = getLU(UNMenos1, x);
 
     double tiempo = 3*DT;
-    int m = 3;
+    int total_runs = 0;
 
     while(T_MAX > tiempo) {
         tiempo = tiempo + DT;
-        double * LUn =  getLU(Un, x);
+        double * LUn = getLU(Un, x);
 
         double* UIM = malloc(U_SIZE * sizeof(double));
+        memset(UIM, 0, U_SIZE * sizeof(double));
+
         for (size_t i = 0; i < U_SIZE; i++)
         {
-            UIM[i] = Un[i] + DT*(55.0/24*LUn[i] - 59.0/24*LUnMenos1[i] + 37.0/24*LUnMenos2[i] -9.0/24*LUnMenos3[i]);
+            UIM[i] = Un[i] + DT*((55.0/24)*LUn[i] - (59.0/24)*LUnMenos1[i] + (37.0/24)*LUnMenos2[i] - (9.0/24)*LUnMenos3[i]);
         }
         double* LUIM = getLU(UIM, x);
         
         double* UNmasUno = malloc(U_SIZE * sizeof(double));
+        memset(UNmasUno, 0, U_SIZE * sizeof(double));
         for (size_t i = 0; i < U_SIZE; i++)
         {
             UNmasUno[i] = Un[i] + DT*(9.0/24*LUIM[i] + 19.0/24*LUn[i] - 5.0/24*LUnMenos1[i] + 1.0/24*LUnMenos2[i]);
@@ -352,18 +372,20 @@ int main() {
 
         // double tol = 1e-15;
         double error = 1.0;
-        int n = 1;
+        int n = 0;
 
-        while (error > 20*FLT_EPSILON)
+        while (error > 20*DBL_EPSILON)
         {
             double* LUNmasUno =  getLU(UNmasUno, x);
+
             double* UNmasUnoP = malloc(U_SIZE * sizeof(double));
+            memset(UNmasUnoP, 0, U_SIZE * sizeof(double));
             for (size_t i = 0; i < U_SIZE; i++)
             {
-                UNmasUnoP[i] = Un[i] + DT*(9.0/24*LUNmasUno[i] + 19.0/24*LUn[i] - 5.0/24*LUnMenos1[i] + 1.0/24*LUnMenos2[i]);
+                UNmasUnoP[i] = Un[i] + DT*((9.0/24)*LUNmasUno[i] + (19.0/24)*LUn[i] - (5.0/24)*LUnMenos1[i] + (1.0/24)*LUnMenos2[i]);
             }
             
-            double max = 0.0;
+            double max = -INFINITY;
             for (size_t i = 0; i < U_SIZE; i++) {
                 double resta = UNmasUno[i] - UNmasUnoP[i];
                 double local_error = fabs(resta);
@@ -390,6 +412,9 @@ int main() {
         UNMenos1 = Un;
         Un = UNmasUno;
 
+        // print_matrix(Un);
+        // exit(0);
+
         free(LUnMenos1);
         free(LUnMenos2);
         free(LUnMenos3);
@@ -400,12 +425,15 @@ int main() {
         // plot(x,Un(4,:),'-b.')
         // pause(0.01)
         // sleep(0.01);
-        m = m+1;
+        total_runs += 1;
 
         free(LUIM);
         free(UIM);
         free(LUn);
     }
+
+    // printf("%d\n", total_runs);
+    // print_matrix(Un);
 
     free(UNMenos3);
     free(UNMenos2);
@@ -423,5 +451,9 @@ int main() {
     free(Vx);
     free(rho);
     free(x);
+
+    // double elapsed = cpu_timer_stop(tstart);
+    // printf("Total runs: %d\n", total_runs);
+    // printf("%f\n", elapsed);
     return 0;
 }
