@@ -2,5 +2,5 @@
 
 for i in {1..20}
 do
-    ./build/serial.out >> build/serial.txt
+    ./build/omp.out >> build/omp.txt
 done

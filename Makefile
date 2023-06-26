@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall -c
-LDFLAGS = -lm
-VERSIONS = serial
+LDFLAGS := -lm
+VERSIONS = omp
 
 SRC_FOLDER = src
 BUILD_FOLDER = build
@@ -13,6 +13,13 @@ OBJS = $(patsubst $(SRC_FOLDER)/%.c, $(BUILD_FOLDER)/%.o, $(SRCS))
 .PHONY: all clean
 
 all: $(EXECUTABLES)
+
+mpi: CC = mpicc
+mpi: $(EXECUTABLES)
+
+omp: CFLAGS += -fopenmp
+omp: LDFLAGS += -fopenmp
+omp: $(EXECUTABLES)
 
 $(EXECUTABLES): $(OBJS)
 	$(CC) $^ $(LDFLAGS) -o $@
