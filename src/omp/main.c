@@ -8,7 +8,7 @@
 #include "timer.h"
 #include <omp.h>
 
-#define NODES 10
+#define NODES 1000
 #define ROWS 8
 #define W 0.0085
 #define GAMMA 2.0
@@ -207,25 +207,28 @@ double* getLU(double* U, double* x) {
     double a6 = -1.0 / 60.0;
 
 
-    double arreglo[ROWS] = {0, 0, 0, 0, 0, 0, 0, 0};
-    // #pragma omp parallel for shared(dummy1,F,a1,a2,a3,a4,a5,a6) private(arreglo)
     //Lo intentamos :) y no funca 
-    for (size_t i = 3; i < NODES - 3; i++) 
+    #pragma omp parallel shared(dummy1,F,a1,a2,a3,a4,a5,a6)
     {
-        for (size_t row = 0; row < ROWS; row++)
+        double arreglo[ROWS] = {0, 0, 0, 0, 0, 0, 0, 0};
+        #pragma omp for 
+        for (size_t i = 3; i < NODES - 3; i++) 
         {
-            arreglo[row] += a1*F[NODES*row + i+3];
-            arreglo[row] += a2*F[NODES*row + i+2];
-            arreglo[row] += a3*F[NODES*row + i+1];
-            arreglo[row] += a4*F[NODES*row + i-1];
-            arreglo[row] += a5*F[NODES*row + i-2];
-            arreglo[row] += a6*F[NODES*row + i-3];
-        }
+            for (size_t row = 0; row < ROWS; row++)
+            {
+                arreglo[row] += a1*F[NODES*row + i+3];
+                arreglo[row] += a2*F[NODES*row + i+2];
+                arreglo[row] += a3*F[NODES*row + i+1];
+                arreglo[row] += a4*F[NODES*row + i-1];
+                arreglo[row] += a5*F[NODES*row + i-2];
+                arreglo[row] += a6*F[NODES*row + i-3];
+            }
 
-        for (size_t row = 0; row < ROWS; row++) {
-            dummy1[row * NODES + i] = arreglo[row];
+            for (size_t row = 0; row < ROWS; row++) {
+                dummy1[row * NODES + i] = arreglo[row];
+            }
+            memset(arreglo, 0, ROWS * sizeof(double));
         }
-        memset(arreglo, 0, ROWS * sizeof(double));
     }
 
     double b1 = 1.0 / 90.0;
@@ -236,25 +239,27 @@ double* getLU(double* U, double* x) {
     double b6 = -3.0 / 20.0;
     double b7 = 1.0 / 90.0;
 
-    memset(arreglo, 0, ROWS * sizeof(double));
+    #pragma omp parallel shared(dummy2,D,b1,b2,b3,b4,b5,b6,b7)
+    {
+        double arreglo[ROWS] = {0, 0, 0, 0, 0, 0, 0, 0};
+        #pragma omp for 
+        for (size_t i = 3; i < NODES - 3; i++) {
+            for (size_t row = 0; row < ROWS; row++)
+            {
+                arreglo[row] += b1*D[NODES*row + i+3];
+                arreglo[row] += b2*D[NODES*row + i+2];
+                arreglo[row] += b3*D[NODES*row + i+1];
+                arreglo[row] += b4*D[NODES*row + i];
+                arreglo[row] += b5*D[NODES*row + i-1];
+                arreglo[row] += b6*D[NODES*row + i-2];
+                arreglo[row] += b7*D[NODES*row + i-3];
+            }
 
-    // #pragma omp parallel for shared(dummy2,D,b1,b2,b3,b4,b5,b6,b7) private(arreglo)
-    for (size_t i = 3; i < NODES - 3; i++) {
-        for (size_t row = 0; row < ROWS; row++)
-        {
-            arreglo[row] += b1*D[NODES*row + i+3];
-            arreglo[row] += b2*D[NODES*row + i+2];
-            arreglo[row] += b3*D[NODES*row + i+1];
-            arreglo[row] += b4*D[NODES*row + i];
-            arreglo[row] += b5*D[NODES*row + i-1];
-            arreglo[row] += b6*D[NODES*row + i-2];
-            arreglo[row] += b7*D[NODES*row + i-3];
+            for (size_t row = 0; row < ROWS; row++) {
+                dummy2[row * NODES + i] = arreglo[row];
+            }
+            memset(arreglo, 0, ROWS * sizeof(double));
         }
-
-        for (size_t row = 0; row < ROWS; row++) {
-            dummy2[row * NODES + i] = arreglo[row];
-        }
-        memset(arreglo, 0, ROWS * sizeof(double));
     }
 
     double eta_v = 0.001;
@@ -455,7 +460,7 @@ int main() {
     }
 
     // printf("%d\n", total_runs);
-    print_matrix(Un);
+    // print_matrix(Un);
 
     free(UNMenos3);
     free(UNMenos2);
@@ -476,6 +481,6 @@ int main() {
 
     double elapsed = cpu_timer_stop(tstart);
     // printf("Total runs: %d\n", total_runs);
-    // printf("%f\n", elapsed);
+    printf("%f\n", elapsed);
     return 0;
 }
