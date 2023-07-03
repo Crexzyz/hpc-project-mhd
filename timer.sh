@@ -2,5 +2,5 @@
 
 for i in {1..20}
 do
-    ./build/omp.out >> build/omp.txt
+    mpirun -n 4 ./build/mpi.out >> build/mpi.txt
 done

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall -c
 LDFLAGS := -lm
-VERSIONS = omp
+VERSIONS = mpi
 
 SRC_FOLDER = src
 BUILD_FOLDER = build
